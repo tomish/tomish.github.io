@@ -13,12 +13,11 @@
 <object data="panel_4h.svg" type="image/svg+xml" id="fig_4h" width="500" height="500"></object>
 <object data="panel_4g.svg" type="image/svg+xml" id="fig_4g" width="500" height="500"></object>
 <object data="PB_vectors.svg" type="image/svg+xml" id="pb_vectors" width="500" height="500"></object>
+<object data="CX_vector_all.svg" type="image/svg+xml" id="cx_vectors" width="500" height="500"></object>
 
 <script>
 
-// Read in JSON
-//obj = JSON.parse(json);
-
+// Create whole bunch of gradients for different cell/hemisphere/morphology types
 var gradient_tn = tinygradient([
   {color: '#FFFFFF', pos: 0},
   //{color: '#754c24', pos: 0.5},
@@ -126,6 +125,7 @@ var cpu1_con_colors = fillArray(colors_cpu1_r_con, 8).concat(fillArray(colors_cp
 
 var motor_colors = [colors_motor_r, colors_motor_l];
 
+
 var c = document.getElementById("route_canvas");
 var ctx = c.getContext("2d");
 var text_color = "#000000"
@@ -139,8 +139,6 @@ var capturer = new CCapture({
     framerate: 60,
     verbose: true
 });
-
-//var tb_hex = 
 
 window.requestAnimFrame = (function(callback) {
     return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame ||
@@ -173,9 +171,8 @@ function updatePath(ctx, x, y){
 }
 
 function updateColors(cells, values, colors, fill, stroke){
-    //console.log(colors);
     for (i = 0; i < cells.length; i++) {
-        value = Math.round(values[i] * 255);
+        value = Math.round(values[i] * 255); // We could push this to Python
         var hexString = colors[i][value].toHex();
         if (fill) {
             for (j = 0; j < cells[i].length; j++) {
@@ -245,10 +242,13 @@ function animate(json, cells, i, max_path_length){
     });
 }
 
+// Choose which svgs to animate
 svgs = [document.getElementById("fig_4h"),
         document.getElementById("fig_4g"),
-        document.getElementById("pb_vectors")];
+        document.getElementById("pb_vectors"),
+        document.getElementById("cx_vectors")];
 
+// Only start running stuff after all svgs have finished loading
 promises = []
 for (var i = 0; i < svgs.length; i++){
     promises.push($.Deferred(function (dfd) {
@@ -258,15 +258,12 @@ for (var i = 0; i < svgs.length; i++){
 
 $.when.apply($, promises).then(function(){
     // get the inner DOM of svg
-    
     var svgdocs = []
     for (var i = 0; i< svgs.length; i++){
         svgdocs.push(svgs[i].contentDocument);
     }
 
-    // get the inner element by id
-
-
+    // get the inner elements by class
     var tn_cell = [get_patch_by_name(svgdocs, "tn_cell_0"),
                    get_patch_by_name(svgdocs, "tn_cell_1")];
     var tn_con = [get_patch_by_name(svgdocs, "tn_con_0"),
@@ -302,6 +299,7 @@ $.when.apply($, promises).then(function(){
     var motor = [get_patch_by_name(svgdocs, "turn_l"),
                  get_patch_by_name(svgdocs, "turn_r")];
 
+    // Store all patch types in a dictionary
     var cells = {'tn_cell':tn_cell, 'tn_con':tn_con, 'tn_arrow':tn_arrow,
                  'tb1_cell':tb1_cell, 'tb1_con':tb1_con,
                  'cpu4_cell':cpu4_cell, 'cpu4_con':cpu4_con, 'cpu4_arrow':cpu4_arrow,
@@ -315,7 +313,7 @@ $.when.apply($, promises).then(function(){
         if (save == true) {
             capturer.start();
         }
-        // Run the loop
+        // Run the animation loop
         var i = 0;
         animate(json, cells, i, max_path_length);
     });
