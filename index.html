@@ -1,0 +1,327 @@
+<html>
+<head>
+<script src="jquery.min.js"></script>
+<script src="tinycolor.js"></script>
+<script src="tinygradient.js"></script>
+<script src="CCapture.all.min.js"></script>
+</head>
+
+<body>
+
+<canvas id="route_canvas" width="500" height="500" style="border:1px solid #000000;"></canvas>
+
+<object data="panel_4h.svg" type="image/svg+xml" id="fig_4h" width="500" height="500"></object>
+<object data="panel_4g.svg" type="image/svg+xml" id="fig_4g" width="500" height="500"></object>
+<object data="PB_vectors.svg" type="image/svg+xml" id="pb_vectors" width="500" height="500"></object>
+
+<script>
+
+// Read in JSON
+//obj = JSON.parse(json);
+
+var gradient_tn = tinygradient([
+  {color: '#FFFFFF', pos: 0},
+  //{color: '#754c24', pos: 0.5},
+  {color: '#925B00', pos: 1}
+]);
+var colors_tn = gradient_tn.rgb(256);
+var gradient_tn_con = tinygradient([
+  {color: '#CDC3B2', pos: 0},
+  {color: '#925B00', pos: 1}
+]);
+var colors_tn_con = gradient_tn_con.rgb(256);
+
+var gradient_tb1 = tinygradient([
+  {color: '#FFFFFF', pos: 0},
+  //{color: '#d1e6d3', pos: 0.5},
+  {color: '#0FF700', pos: 1}
+]);
+var colors_tb1 = gradient_tb1.rgb(256);
+var gradient_tb1_con = tinygradient([
+  {color: '#353B35', pos: 0},
+  {color: '#0FF700', pos: 1}
+]);
+var colors_tb1_con = gradient_tb1_con.rgb(256);
+
+var gradient_cpu4_l = tinygradient([
+  {color: '#FFFFFF', pos: 0},
+  //{color: '#fae6c8', pos: 0.5},
+  {color: '#FF5200', pos: 1}
+]);
+var colors_cpu4_l = gradient_cpu4_l.rgb(256);
+var gradient_cpu4_l_con = tinygradient([
+  {color: '#46403E', pos: 0},
+  {color: '#FF5200', pos: 1}
+]);
+var colors_cpu4_l_con = gradient_cpu4_l_con.rgb(256);
+
+var gradient_cpu4_r = tinygradient([
+  {color: '#FFFFFF', pos: 0},
+  //{color: '#fae6c8', pos: 0.5},
+  {color: '#FFFF00', pos: 1}
+]);
+var colors_cpu4_r = gradient_cpu4_r.rgb(256);
+var gradient_cpu4_r_con = tinygradient([
+  {color: '#46463E', pos: 0},
+  {color: '#FFFF00', pos: 1}
+]);
+var colors_cpu4_r_con = gradient_cpu4_r_con.rgb(256);
+
+var gradient_cpu1_l = tinygradient([
+  {color: '#FFFFFF', pos: 0},
+  //{color: '#b4d4e1', pos: 0.5},
+  {color: '#1200E0', pos: 1}
+]);
+var colors_cpu1_l = gradient_cpu1_l.rgb(256);
+var gradient_cpu1_l_con = tinygradient([
+  {color: '#32353B', pos: 0},
+  {color: '#1200E0', pos: 1}
+]);
+var colors_cpu1_l_con = gradient_cpu1_l_con.rgb(256);
+
+var gradient_cpu1_r = tinygradient([
+  {color: '#FFFFFF', pos: 0},
+  //{color: '#b4d4e1', pos: 0.5},
+  {color: '#00AFE0', pos: 1}
+]);
+var colors_cpu1_r = gradient_cpu1_r.rgb(256);
+var gradient_cpu1_r_con = tinygradient([
+  {color: '#32393B', pos: 0},
+  {color: '#00AFE0', pos: 1}
+]);
+var colors_cpu1_r_con = gradient_cpu1_r_con.rgb(256);
+
+var gradient_motor_l = tinygradient([
+  {color: '#FFFFFF', pos: 0},
+  {color: '#1200E0', pos: 0.7},
+  {color: '#1200E0', pos: 1}
+]);
+var colors_motor_l = gradient_motor_l.rgb(256);
+var gradient_motor_r = tinygradient([
+  {color: '#FFFFFF', pos: 0},
+  {color: '#00AFE0', pos: 0.7},
+  {color: '#00AFE0', pos: 1}
+]);
+var colors_motor_r = gradient_motor_r.rgb(256);
+
+function fillArray(value, len) {
+    if (len == 0) return [];
+    var a = [value];
+    while (a.length * 2 <= len) a = a.concat(a);
+    if (a.length < len) a = a.concat(a.slice(0, len - a.length));
+    return a;
+}
+
+var tn_colors = fillArray(colors_tn, 2);
+var tn_con_colors = fillArray(colors_tn_con, 2);
+
+var tb1_colors = fillArray(colors_tb1, 8);
+var tb1_con_colors = fillArray(colors_tb1_con, 8);
+
+var cpu4_colors = fillArray(colors_cpu4_l, 8).concat(fillArray(colors_cpu4_r, 8));
+var cpu4_con_colors = fillArray(colors_cpu4_l_con, 8).concat(fillArray(colors_cpu4_r_con, 8));
+
+var cpu1_colors = fillArray(colors_cpu1_r, 8).concat(fillArray(colors_cpu1_l, 8));
+var cpu1_con_colors = fillArray(colors_cpu1_r_con, 8).concat(fillArray(colors_cpu1_l_con, 8));
+
+var motor_colors = [colors_motor_r, colors_motor_l];
+
+var c = document.getElementById("route_canvas");
+var ctx = c.getContext("2d");
+var text_color = "#000000"
+var outbound_color = "#9966FF";
+var inbound_color = "#33CC33";
+var save = false;
+var fps = 60;
+
+var capturer = new CCapture({
+    format: 'webm',
+    framerate: 60,
+    verbose: true
+});
+
+//var tb_hex = 
+
+window.requestAnimFrame = (function(callback) {
+    return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame ||
+    function(callback) {
+        window.setTimeout(callback, 1000 / fps); // Reset this to 60 eventually.
+    };
+})();
+
+function d2h(d) {
+    var s = (+d).toString(16);
+    if(s.length < 2) {
+        s = '0' + s;
+    }
+    return s;
+}
+
+function initialize_canvas(ctx){
+    ctx.clearRect(0, 0, c.width, c.height);
+    ctx.font = "20px Arial";
+    ctx.textAlign="center";
+    ctx.fillStyle=text_color;
+    ctx.fillText("N", c.width/2, c.width/2);
+    ctx.fillStyle=outbound_color;
+}
+
+function updatePath(ctx, x, y){
+    canvas_x = c.width / 2 + x * c.width / 600;
+    canvas_y = c.height / 2 - y * c.height / 600;
+    ctx.fillRect(canvas_x, canvas_y, 1, 1);
+}
+
+function updateColors(cells, values, colors, fill, stroke){
+    //console.log(colors);
+    for (i = 0; i < cells.length; i++) {
+        value = Math.round(values[i] * 255);
+        var hexString = colors[i][value].toHex();
+        if (fill) {
+            for (j = 0; j < cells[i].length; j++) {
+                cells[i][j].style.fill=hexString;
+            }
+        }
+        if (stroke) {
+            for (j = 0; j < cells[i].length; j++) {
+                cells[i][j].style.stroke=hexString;
+            }
+        }
+    }
+}
+
+function render(json, cells, i){
+    updatePath(ctx, json.x[i], json.y[i]);
+    updateColors(cells['tn_cell'], json.tn2[i], tn_colors, true, false);
+    updateColors(cells['tn_con'], json.tn2[i], tn_con_colors, false, true);
+    updateColors(cells['tn_arrow'], json.tn2[i], tn_con_colors, true, false);
+    updateColors(cells['cpu1_cell'], json.cpu1[i], cpu1_colors, true, false);
+    updateColors(cells['cpu1_con'], json.cpu1[i], cpu1_con_colors, false, true);
+    updateColors(cells['cpu1_arrow'], json.cpu1[i], cpu1_con_colors, true, false);
+    updateColors(cells['tb1_cell'], json.tb1[i], tb1_colors, true, false);
+    updateColors(cells['tb1_con'], json.tb1[i], tb1_con_colors, false, true);
+    updateColors(cells['cpu4_cell'], json.cpu4[i], cpu4_colors, true, false);
+    updateColors(cells['cpu4_con'], json.cpu4[i], cpu4_con_colors, false, true);
+    updateColors(cells['cpu4_arrow'], json.cpu4[i], cpu4_con_colors, true, false);
+    updateColors(cells['motor'], json.motor[i], motor_colors, true, false);
+    if (save == true) {
+        capturer.capture(c);
+    }
+}
+
+function get_patch_by_name(svgdocs, classname){
+    patches = [];
+    for (i = 0; i < svgdocs.length; i++){
+        doc_patches = svgdocs[i].getElementsByClassName(classname);
+        for (var j = 0; j < doc_patches.length; j++){
+            patches.push(doc_patches[j]);
+        }
+    }
+    return patches;
+}
+
+function animate(json, cells, i, max_path_length){
+    // Draw everything
+    render(json, cells, i);
+    i += 1;
+    // If reach the end, save and restart
+    if (i == max_path_length) {
+        if (save == true) {
+            console.log("saving...");
+            capturer.stop();
+            capturer.save();
+            save = false;
+        }
+        i = 0;
+        initialize_canvas(ctx);
+    }
+    // Half way change colour to do homing
+    if (i == Math.round(max_path_length / 2)) {
+        ctx.fillStyle=inbound_color;
+    }
+
+    requestAnimFrame(function() {
+       animate(json, cells, i, max_path_length);
+    });
+}
+
+svgs = [document.getElementById("fig_4h"),
+        document.getElementById("fig_4g"),
+        document.getElementById("pb_vectors")];
+
+promises = []
+for (var i = 0; i < svgs.length; i++){
+    promises.push($.Deferred(function (dfd) {
+        svgs[i].addEventListener("load", dfd.resolve);
+    }).promise());
+}
+
+$.when.apply($, promises).then(function(){
+    // get the inner DOM of svg
+    
+    var svgdocs = []
+    for (var i = 0; i< svgs.length; i++){
+        svgdocs.push(svgs[i].contentDocument);
+    }
+
+    // get the inner element by id
+
+
+    var tn_cell = [get_patch_by_name(svgdocs, "tn_cell_0"),
+                   get_patch_by_name(svgdocs, "tn_cell_1")];
+    var tn_con = [get_patch_by_name(svgdocs, "tn_con_0"),
+                  get_patch_by_name(svgdocs, "tn_con_1")];
+    var tn_arrow = [get_patch_by_name(svgdocs, "tn_arrow_0"),
+                    get_patch_by_name(svgdocs, "tn_arrow_1")];
+
+    var tb1_cell = [];
+    var tb1_con = [];
+    for (var i = 0; i < 8; i++) {
+        tb1_cell.push(get_patch_by_name(svgdocs, "tb1_cell_"+i));
+        tb1_con.push(get_patch_by_name(svgdocs, "tb1_con_"+i));
+    }
+
+    var cpu4_cell = [];
+    var cpu4_con = [];
+    var cpu4_arrow = [];
+    for (var i = 0; i < 16; i++) {
+        cpu4_cell.push(get_patch_by_name(svgdocs, "cpu4_cell_"+i));
+        cpu4_con.push(get_patch_by_name(svgdocs, "cpu4_con_"+i));
+        cpu4_arrow.push(get_patch_by_name(svgdocs, "cpu4_arrow_"+i));
+    }
+
+    var cpu1_cell = [];
+    var cpu1_con = [];
+    var cpu1_arrow = [];
+    for (var i = 0; i < 16; i++) {
+        cpu1_con.push(get_patch_by_name(svgdocs, "cpu1_con_"+i));
+        cpu1_cell.push(get_patch_by_name(svgdocs, "cpu1_cell_"+i));
+        cpu1_arrow.push(get_patch_by_name(svgdocs, "cpu1_arrow_"+i));
+    }
+
+    var motor = [get_patch_by_name(svgdocs, "turn_l"),
+                 get_patch_by_name(svgdocs, "turn_r")];
+
+    var cells = {'tn_cell':tn_cell, 'tn_con':tn_con, 'tn_arrow':tn_arrow,
+                 'tb1_cell':tb1_cell, 'tb1_con':tb1_con,
+                 'cpu4_cell':cpu4_cell, 'cpu4_con':cpu4_con, 'cpu4_arrow':cpu4_arrow,
+                 'cpu1_cell':cpu1_cell, 'cpu1_con':cpu1_con, 'cpu1_arrow':cpu1_arrow,
+                 'motor':motor}
+
+    // Load the data
+    $.getJSON("path.json", function(json) {
+        var max_path_length = json.x.length;
+        initialize_canvas(ctx);
+        if (save == true) {
+            capturer.start();
+        }
+        // Run the loop
+        var i = 0;
+        animate(json, cells, i, max_path_length);
+    });
+}, false);
+
+
+</script>
+</body>
+</html>
