@@ -90,6 +90,19 @@ var gradient_cpu1_r_con = tinygradient([
 ]);
 var colors_cpu1_r_con = gradient_cpu1_r_con.rgb(256);
 
+var gradient_cpu1b = tinygradient([
+  {color: '#FFFFFF', pos: 0},
+  //{color: '#b4d4e1', pos: 0.5},
+  {color: '#8E00E5', pos: 1}
+]);
+var colors_cpu1b = gradient_cpu1b.rgb(256);
+var gradient_cpu1b_con = tinygradient([
+  {color: '#322F35', pos: 0},
+  {color: '#8E00E5', pos: 1}
+]);
+var colors_cpu1b_con = gradient_cpu1b_con.rgb(256);
+
+
 var gradient_motor_l = tinygradient([
   {color: '#FFFFFF', pos: 0},
   {color: '#1200E0', pos: 0.7},
@@ -120,8 +133,14 @@ var tb1_con_colors = fillArray(colors_tb1_con, 8);
 var cpu4_colors = fillArray(colors_cpu4_l, 8).concat(fillArray(colors_cpu4_r, 8));
 var cpu4_con_colors = fillArray(colors_cpu4_l_con, 8).concat(fillArray(colors_cpu4_r_con, 8));
 
-var cpu1_colors = fillArray(colors_cpu1_r, 8).concat(fillArray(colors_cpu1_l, 8));
-var cpu1_con_colors = fillArray(colors_cpu1_r_con, 8).concat(fillArray(colors_cpu1_l_con, 8));
+var cpu1_colors = fillArray(colors_cpu1b, 1).concat(
+                  fillArray(colors_cpu1_l, 7)).concat(
+                  fillArray(colors_cpu1_r, 7)).concat(
+                  fillArray(colors_cpu1b, 1));
+var cpu1_con_colors = fillArray(colors_cpu1b_con, 1).concat(
+                      fillArray(colors_cpu1_r_con, 7)).concat(
+                      fillArray(colors_cpu1_l_con, 7)).concat(
+                      fillArray(colors_cpu1b_con, 1));
 
 var motor_colors = [colors_motor_r, colors_motor_l];
 
