@@ -4,16 +4,30 @@
 <script src="tinycolor.js"></script>
 <script src="tinygradient.js"></script>
 <script src="CCapture.all.min.js"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.5/css/bootstrap.min.css" integrity="sha384-AysaV+vQoT3kOAXZkl02PThvDr8HYKPZhNT5h/CXfBThSRXQ6jW5DO2ekP5ViFdi" crossorigin="anonymous">
 </head>
 
 <body>
-
-<canvas id="route_canvas" width="500" height="500" style="border:1px solid #000000;"></canvas>
-
-<object data="panel_4h.svg" type="image/svg+xml" id="fig_4h" width="500" height="500"></object>
-<object data="panel_4g.svg" type="image/svg+xml" id="fig_4g" width="500" height="500"></object>
-<object data="PB_vectors.svg" type="image/svg+xml" id="pb_vectors" width="500" height="500"></object>
-<object data="CX_vector_all.svg" type="image/svg+xml" id="cx_vectors" width="500" height="500"></object>
+<div class="container">
+    <div class="row" style="width:1260px">
+        <div class="col-lg-6">
+            <canvas id="route_canvas" width="600" height="600" style="border:1px solid #000000;"></canvas><br>
+            <!--<object data="PB_vectors.svg" type="image/svg+xml" id="pb_vectors" width="500" height="500"></object>-->
+            <object data="CX_vector_all_cl1.svg" type="image/svg+xml" id="cx_vectors_cl1" width="146" height="146"></object>
+            <object data="CX_vector_all_tb1.svg" type="image/svg+xml" id="cx_vectors_tb1" width="146" height="146"></object>
+            <object data="CX_vector_all_cpu4.svg" type="image/svg+xml" id="cx_vectors_cpu4" width="146" height="146"></object>
+            <object data="CX_vector_all_cpu1.svg" type="image/svg+xml" id="cx_vectors_cpu1" width="146" height="146"></object>
+        </div>
+        <div class="col-lg-6">
+            <object data="panel_4h.svg" type="image/svg+xml" id="fig_4h" width="500" height="500"></object><br>
+            <object data="panel_4g.svg" type="image/svg+xml" id="fig_4g" width="500" height="250"></object>
+            
+            
+        </div>
+    </div>
+        
+    </div>
+</div>
 
 <script>
 
@@ -29,6 +43,13 @@ var gradient_tn_con = tinygradient([
   {color: '#925B00', pos: 1}
 ]);
 var colors_tn_con = gradient_tn_con.rgb(256);
+
+var gradient_cl1 = tinygradient([
+  {color: '#FFFFFF', pos: 0},
+  {color: '#B0D000', pos: 1}
+]);
+var colors_cl1 = gradient_cl1.rgb(256);
+
 
 var gradient_tb1 = tinygradient([
   {color: '#FFFFFF', pos: 0},
@@ -127,6 +148,8 @@ function fillArray(value, len) {
 var tn_colors = fillArray(colors_tn, 2);
 var tn_con_colors = fillArray(colors_tn_con, 2);
 
+var cl1_colors = fillArray(colors_cl1, 16);
+
 var tb1_colors = fillArray(colors_tb1, 8);
 var tb1_con_colors = fillArray(colors_tb1_con, 8);
 
@@ -166,14 +189,6 @@ window.requestAnimFrame = (function(callback) {
     };
 })();
 
-function d2h(d) {
-    var s = (+d).toString(16);
-    if(s.length < 2) {
-        s = '0' + s;
-    }
-    return s;
-}
-
 function initialize_canvas(ctx){
     ctx.clearRect(0, 0, c.width, c.height);
     ctx.font = "20px Arial";
@@ -211,11 +226,12 @@ function render(json, cells, i){
     updateColors(cells['tn_cell'], json.tn2[i], tn_colors, true, false);
     updateColors(cells['tn_con'], json.tn2[i], tn_con_colors, false, true);
     updateColors(cells['tn_arrow'], json.tn2[i], tn_con_colors, true, false);
+    updateColors(cells['cl1_cell'], json.cl1[i], cl1_colors, true, false);
+    updateColors(cells['tb1_cell'], json.tb1[i], tb1_colors, true, false);
+    updateColors(cells['tb1_con'], json.tb1[i], tb1_con_colors, false, true);
     updateColors(cells['cpu1_cell'], json.cpu1[i], cpu1_colors, true, false);
     updateColors(cells['cpu1_con'], json.cpu1[i], cpu1_con_colors, false, true);
     updateColors(cells['cpu1_arrow'], json.cpu1[i], cpu1_con_colors, true, false);
-    updateColors(cells['tb1_cell'], json.tb1[i], tb1_colors, true, false);
-    updateColors(cells['tb1_con'], json.tb1[i], tb1_con_colors, false, true);
     updateColors(cells['cpu4_cell'], json.cpu4[i], cpu4_colors, true, false);
     updateColors(cells['cpu4_con'], json.cpu4[i], cpu4_con_colors, false, true);
     updateColors(cells['cpu4_arrow'], json.cpu4[i], cpu4_con_colors, true, false);
@@ -264,8 +280,11 @@ function animate(json, cells, i, max_path_length){
 // Choose which svgs to animate
 svgs = [document.getElementById("fig_4h"),
         document.getElementById("fig_4g"),
-        document.getElementById("pb_vectors"),
-        document.getElementById("cx_vectors")];
+        //document.getElementById("pb_vectors"),
+        document.getElementById("cx_vectors_cl1"),
+        document.getElementById("cx_vectors_tb1"),
+        document.getElementById("cx_vectors_cpu4"),
+        document.getElementById("cx_vectors_cpu1")];
 
 // Only start running stuff after all svgs have finished loading
 promises = []
@@ -289,6 +308,11 @@ $.when.apply($, promises).then(function(){
                   get_patch_by_name(svgdocs, "tn_con_1")];
     var tn_arrow = [get_patch_by_name(svgdocs, "tn_arrow_0"),
                     get_patch_by_name(svgdocs, "tn_arrow_1")];
+
+    var cl1_cell = [];
+    for (var i = 0; i < 16; i++) {
+        cl1_cell.push(get_patch_by_name(svgdocs, "cl1_cell_"+i));
+    }
 
     var tb1_cell = [];
     var tb1_con = [];
@@ -320,13 +344,14 @@ $.when.apply($, promises).then(function(){
 
     // Store all patch types in a dictionary
     var cells = {'tn_cell':tn_cell, 'tn_con':tn_con, 'tn_arrow':tn_arrow,
+                 'cl1_cell':cl1_cell,
                  'tb1_cell':tb1_cell, 'tb1_con':tb1_con,
                  'cpu4_cell':cpu4_cell, 'cpu4_con':cpu4_con, 'cpu4_arrow':cpu4_arrow,
                  'cpu1_cell':cpu1_cell, 'cpu1_con':cpu1_con, 'cpu1_arrow':cpu1_arrow,
                  'motor':motor}
 
     // Load the data
-    $.getJSON("path.json", function(json) {
+    $.getJSON("path1.json", function(json) {
         var max_path_length = json.x.length;
         initialize_canvas(ctx);
         if (save == true) {
