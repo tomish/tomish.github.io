@@ -8,6 +8,7 @@
 </head>
 
 <body>
+<br>
 <div class="container">
     <div class="row" style="width:1260px">
         <div class="col-lg-6">
@@ -123,16 +124,18 @@ var gradient_cpu1b_con = tinygradient([
 ]);
 var colors_cpu1b_con = gradient_cpu1b_con.rgb(256);
 
-
+// Added a sharper gradient as values typically lie between .2 and .5
 var gradient_motor_l = tinygradient([
   {color: '#FFFFFF', pos: 0},
-  {color: '#1200E0', pos: 0.7},
+  {color: '#FFFFFF', pos: 0.2},
+  {color: '#1200E0', pos: 0.5},
   {color: '#1200E0', pos: 1}
 ]);
 var colors_motor_l = gradient_motor_l.rgb(256);
 var gradient_motor_r = tinygradient([
   {color: '#FFFFFF', pos: 0},
-  {color: '#00AFE0', pos: 0.7},
+  {color: '#FFFFFF', pos: 0.2},
+  {color: '#00AFE0', pos: 0.5},
   {color: '#00AFE0', pos: 1}
 ]);
 var colors_motor_r = gradient_motor_r.rgb(256);
@@ -167,6 +170,7 @@ var cpu1_con_colors = fillArray(colors_cpu1b_con, 1).concat(
 
 var motor_colors = [colors_motor_r, colors_motor_l];
 
+var trace_colors = fillArray(colors_tb1, 16); // Bright green
 
 var c = document.getElementById("route_canvas");
 var ctx = c.getContext("2d");
@@ -236,6 +240,27 @@ function render(json, cells, i){
     updateColors(cells['cpu4_con'], json.cpu4[i], cpu4_con_colors, false, true);
     updateColors(cells['cpu4_arrow'], json.cpu4[i], cpu4_con_colors, true, false);
     updateColors(cells['motor'], json.motor[i], motor_colors, true, false);
+
+    updateColors(cells['cl1_cell_trace'], json.cl1[i], trace_colors, true, false);
+    updateColors(cells['tb1_cell_trace'], json.tb1[i], trace_colors, true, false);
+    updateColors(cells['cpu4_cell_trace'], json.cpu4[i], trace_colors, true, false);
+    updateColors(cells['cpu1_cell_trace'], json.cpu1[i], trace_colors, true, false);
+    /*updateColors(cells['cl1_cell_trace'], json.cl1[i], cl1_colors, true, false);
+    updateColors(cells['tb1_cell_trace'], json.tb1[i], tb1_colors, true, false);
+    updateColors(cells['cpu4_cell_trace'], json.cpu4[i], cpu4_colors, true, false);
+    updateColors(cells['cpu1_cell_trace'], json.cpu1[i], cpu1_colors, true, false);*/
+
+    cpu4_sum = [0, 0];
+    for (var j = 0; j< 8; j++){
+        cpu4_sum[0] += json.cpu4[i][j]
+    }
+    cpu4_sum[0] /= 8;
+    for (var j = 8; j< 16; j++){
+        cpu4_sum[1] += json.cpu4[i][j]
+    }
+    cpu4_sum[1] /= 8;
+    updateColors(cells['cpu4_sum'], cpu4_sum, trace_colors, true, false);
+
     if (save == true) {
         capturer.capture(c);
     }
@@ -301,46 +326,48 @@ $.when.apply($, promises).then(function(){
         svgdocs.push(svgs[i].contentDocument);
     }
 
+    conn_docs = svgdocs.slice(0, 2);
+
     // get the inner elements by class
-    var tn_cell = [get_patch_by_name(svgdocs, "tn_cell_0"),
-                   get_patch_by_name(svgdocs, "tn_cell_1")];
-    var tn_con = [get_patch_by_name(svgdocs, "tn_con_0"),
-                  get_patch_by_name(svgdocs, "tn_con_1")];
-    var tn_arrow = [get_patch_by_name(svgdocs, "tn_arrow_0"),
-                    get_patch_by_name(svgdocs, "tn_arrow_1")];
+    var tn_cell = [get_patch_by_name(conn_docs, "tn_cell_0"),
+                   get_patch_by_name(conn_docs, "tn_cell_1")];
+    var tn_con = [get_patch_by_name(conn_docs, "tn_con_0"),
+                  get_patch_by_name(conn_docs, "tn_con_1")];
+    var tn_arrow = [get_patch_by_name(conn_docs, "tn_arrow_0"),
+                    get_patch_by_name(conn_docs, "tn_arrow_1")];
 
     var cl1_cell = [];
     for (var i = 0; i < 16; i++) {
-        cl1_cell.push(get_patch_by_name(svgdocs, "cl1_cell_"+i));
+        cl1_cell.push(get_patch_by_name(conn_docs, "cl1_cell_"+i));
     }
 
     var tb1_cell = [];
     var tb1_con = [];
     for (var i = 0; i < 8; i++) {
-        tb1_cell.push(get_patch_by_name(svgdocs, "tb1_cell_"+i));
-        tb1_con.push(get_patch_by_name(svgdocs, "tb1_con_"+i));
+        tb1_cell.push(get_patch_by_name(conn_docs, "tb1_cell_"+i));
+        tb1_con.push(get_patch_by_name(conn_docs, "tb1_con_"+i));
     }
 
     var cpu4_cell = [];
     var cpu4_con = [];
     var cpu4_arrow = [];
     for (var i = 0; i < 16; i++) {
-        cpu4_cell.push(get_patch_by_name(svgdocs, "cpu4_cell_"+i));
-        cpu4_con.push(get_patch_by_name(svgdocs, "cpu4_con_"+i));
-        cpu4_arrow.push(get_patch_by_name(svgdocs, "cpu4_arrow_"+i));
+        cpu4_cell.push(get_patch_by_name(conn_docs, "cpu4_cell_"+i));
+        cpu4_con.push(get_patch_by_name(conn_docs, "cpu4_con_"+i));
+        cpu4_arrow.push(get_patch_by_name(conn_docs, "cpu4_arrow_"+i));
     }
 
     var cpu1_cell = [];
     var cpu1_con = [];
     var cpu1_arrow = [];
     for (var i = 0; i < 16; i++) {
-        cpu1_con.push(get_patch_by_name(svgdocs, "cpu1_con_"+i));
-        cpu1_cell.push(get_patch_by_name(svgdocs, "cpu1_cell_"+i));
-        cpu1_arrow.push(get_patch_by_name(svgdocs, "cpu1_arrow_"+i));
+        cpu1_con.push(get_patch_by_name(conn_docs, "cpu1_con_"+i));
+        cpu1_cell.push(get_patch_by_name(conn_docs, "cpu1_cell_"+i));
+        cpu1_arrow.push(get_patch_by_name(conn_docs, "cpu1_arrow_"+i));
     }
 
-    var motor = [get_patch_by_name(svgdocs, "turn_l"),
-                 get_patch_by_name(svgdocs, "turn_r")];
+    var motor = [get_patch_by_name(conn_docs, "turn_l"),
+                 get_patch_by_name(conn_docs, "turn_r")];
 
     // Store all patch types in a dictionary
     var cells = {'tn_cell':tn_cell, 'tn_con':tn_con, 'tn_arrow':tn_arrow,
@@ -349,6 +376,25 @@ $.when.apply($, promises).then(function(){
                  'cpu4_cell':cpu4_cell, 'cpu4_con':cpu4_con, 'cpu4_arrow':cpu4_arrow,
                  'cpu1_cell':cpu1_cell, 'cpu1_con':cpu1_con, 'cpu1_arrow':cpu1_arrow,
                  'motor':motor}
+
+    // Stuff for the trace docs
+    trace_docs = svgdocs.slice(2, 6);
+    cells['cl1_cell_trace'] = []
+    cells['tb1_cell_trace'] = []
+    cells['cpu4_cell_trace'] = []
+    cells['cpu1_cell_trace'] = []
+    for (var i = 0; i < 16; i++) {
+        cells['cl1_cell_trace'].push(get_patch_by_name(trace_docs, "cl1_cell_"+i));
+        if (i < 8) {
+            cells['tb1_cell_trace'].push(get_patch_by_name(trace_docs, "tb1_cell_"+i));
+        }
+        cells['cpu4_cell_trace'].push(get_patch_by_name(trace_docs, "cpu4_cell_"+i));
+        cells['cpu1_cell_trace'].push(get_patch_by_name(trace_docs, "cpu1_cell_"+i));
+    }
+
+    cells['cpu4_sum'] = [get_patch_by_name(trace_docs, "cpu4_sum_0"),
+                         get_patch_by_name(trace_docs, "cpu4_sum_1")];
+
 
     // Load the data
     $.getJSON("path1.json", function(json) {
