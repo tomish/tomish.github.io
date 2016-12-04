@@ -5,6 +5,8 @@
 <script src="tinygradient.js"></script>
 <script src="CCapture.all.min.js"></script>
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.5/css/bootstrap.min.css" integrity="sha384-AysaV+vQoT3kOAXZkl02PThvDr8HYKPZhNT5h/CXfBThSRXQ6jW5DO2ekP5ViFdi" crossorigin="anonymous">
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.5/js/bootstrap.min.js" integrity="sha384-BLiI7JTZm+JWlgKa0M0kGRpJbF2J8q+qreVrKBC47e3K6BW78kGLrCkeRX6I9RoK" crossorigin="anonymous"></script>
+
 </head>
 
 <body>
@@ -17,20 +19,46 @@
             <object data="CX_vector_all_cl1.svg" type="image/svg+xml" id="cx_vectors_cl1" width="146" height="146"></object>
             <object data="CX_vector_all_tb1.svg" type="image/svg+xml" id="cx_vectors_tb1" width="146" height="146"></object>
             <object data="CX_vector_all_cpu4.svg" type="image/svg+xml" id="cx_vectors_cpu4" width="146" height="146"></object>
-            <object data="CX_vector_all_cpu1.svg" type="image/svg+xml" id="cx_vectors_cpu1" width="146" height="146"></object>
+            <object data="CX_vector_all_cpu1.svg" type="image/svg+xml" id="cx_vectors_cpu1" width="146" height="146"></object><br>
+            <div class="col-lg-3 text-xs-center"><p>CL1</p></div>
+            <div class="col-lg-3 text-xs-center"><p>TB1</p></div>
+            <div class="col-lg-3 text-xs-center"><p>CPU4</p></div>
+            <div class="col-lg-3 text-xs-center"><p>CPU1</p></div>
         </div>
         <div class="col-lg-6">
             <object data="panel_4h.svg" type="image/svg+xml" id="fig_4h" width="500" height="500"></object><br>
             <object data="panel_4g.svg" type="image/svg+xml" id="fig_4g" width="500" height="250"></object>
-            
-            
+
+            <div class="form-check">
+              <div class="col-lg-6">
+                  <label class="form-check-label">
+                    <input class="form-check-input" type="radio" name="beeType" id="exampleRadios1" value="bee" checked>
+                    Bee
+                  </label>
+                  <label class="form-check-label">
+                    <input class="form-check-input" type="radio" name="beeType" id="exampleRadios2" value="line">
+                    Line
+                  </label>
+              </div>
+              <div class="col-lg-6">
+                  <label class="form-check-label">
+                    <input class="form-check-input" type="radio" name="colorType" id="exampleRadios1" value="coloured" checked>
+                    Coloured
+                  </label>
+                  <label class="form-check-label">
+                    <input class="form-check-input" type="radio" name="colorType" id="exampleRadios2" value="green">
+                    Green
+                  </label>
+              </div>
+            </div>
         </div>
-    </div>
-        
     </div>
 </div>
 
+
 <script>
+
+
 
 // Create whole bunch of gradients for different cell/hemisphere/morphology types
 var gradient_tn = tinygradient([
@@ -174,11 +202,26 @@ var trace_colors = fillArray(colors_tb1, 16); // Bright green
 
 var c = document.getElementById("route_canvas");
 var ctx = c.getContext("2d");
-var text_color = "#000000"
+var text_color = "#000000";
 var outbound_color = "#9966FF";
 var inbound_color = "#33CC33";
 var save = false;
 var fps = 60;
+
+var beeImage = new Image();
+var bee_queue = [];
+var beeSize = 7; //pixels
+var beeType = "bee";
+
+$('input[name=beeType]').change( function() {
+   beeType = this.value;   
+});
+
+var colorType = "coloured";
+
+$('input[name=colorType]').change( function() {
+   colorType = this.value;   
+});
 
 var capturer = new CCapture({
     format: 'webm',
@@ -200,12 +243,72 @@ function initialize_canvas(ctx){
     ctx.fillStyle=text_color;
     ctx.fillText("N", c.width/2, c.width/2);
     ctx.fillStyle=outbound_color;
+    bee_queue = []
+   
+    //ctx.drawImage(beeImage, c.width/2-beeImage.width/2,c.height/2-beeImage.width/2);
 }
 
-function updatePath(ctx, x, y){
+function drawBee(ctx, x, y, h){
+    ctx.save();
     canvas_x = c.width / 2 + x * c.width / 600;
     canvas_y = c.height / 2 - y * c.height / 600;
-    ctx.fillRect(canvas_x, canvas_y, 1, 1);
+    ctx.translate(canvas_x, canvas_y);
+    ctx.rotate(h - 0.5 * Math.PI);
+
+    // Draw the bee
+    if (beeType == "bee"){
+        ctx.drawImage(beeImage,
+                  -beeSize/2,
+                  -beeSize*beeImage.height/beeImage.width/2,
+                  beeSize,
+                  beeSize*beeImage.height/beeImage.width);
+    } else {
+        ctx.beginPath();
+        ctx.moveTo(-beeSize/2, 0);
+        ctx.lineTo(beeSize, 0);
+        ctx.stroke();
+    }
+    ctx.restore();
+}
+
+function updatePath(ctx, x, y, h, t){
+    var canvas_x;
+    var canvas_y;
+    var max_path_length = x.length;
+
+    max_queue_length = 20
+    if (bee_queue.length > max_queue_length){
+        bee_queue.shift();
+    }
+    if (t%10 == 0){
+        bee_queue.push({'x':x[t],'y':y[t],'h':h});
+    }
+    
+
+    // Clear canvas
+    ctx.clearRect(0,0, c.width, c.height);
+
+    // Draw nest
+    ctx.fillStyle=text_color;
+    ctx.fillText("N", c.width/2, c.width/2);
+
+    // Draw path
+    ctx.fillStyle=outbound_color;
+    for (var i = 0; i < t; i++){
+        if (i == Math.round(max_path_length / 2)) {
+            ctx.fillStyle=inbound_color;
+        }
+        canvas_x = c.width / 2 + x[i] * c.width / 600;
+        canvas_y = c.height / 2 - y[i] * c.height / 600;
+        ctx.fillRect(canvas_x, canvas_y, 1, 1);
+    }
+
+    for (var i = 0; i < bee_queue.length; i++){
+        ctx.globalAlpha = 1 / (bee_queue.length-i);
+        drawBee(ctx, bee_queue[i]['x'], bee_queue[i]['y'], bee_queue[i]['h'])
+    }
+    ctx.globalAlpha = 1;
+    drawBee(ctx, x[t], y[t], h)
 }
 
 function updateColors(cells, values, colors, fill, stroke){
@@ -226,7 +329,7 @@ function updateColors(cells, values, colors, fill, stroke){
 }
 
 function render(json, cells, i){
-    updatePath(ctx, json.x[i], json.y[i]);
+    updatePath(ctx, json.x, json.y, json.h[i], i);
     updateColors(cells['tn_cell'], json.tn2[i], tn_colors, true, false);
     updateColors(cells['tn_con'], json.tn2[i], tn_con_colors, false, true);
     updateColors(cells['tn_arrow'], json.tn2[i], tn_con_colors, true, false);
@@ -241,15 +344,7 @@ function render(json, cells, i){
     updateColors(cells['cpu4_arrow'], json.cpu4[i], cpu4_con_colors, true, false);
     updateColors(cells['motor'], json.motor[i], motor_colors, true, false);
 
-    updateColors(cells['cl1_cell_trace'], json.cl1[i], trace_colors, true, false);
-    updateColors(cells['tb1_cell_trace'], json.tb1[i], trace_colors, true, false);
-    updateColors(cells['cpu4_cell_trace'], json.cpu4[i], trace_colors, true, false);
-    updateColors(cells['cpu1_cell_trace'], json.cpu1[i], trace_colors, true, false);
-    /*updateColors(cells['cl1_cell_trace'], json.cl1[i], cl1_colors, true, false);
-    updateColors(cells['tb1_cell_trace'], json.tb1[i], tb1_colors, true, false);
-    updateColors(cells['cpu4_cell_trace'], json.cpu4[i], cpu4_colors, true, false);
-    updateColors(cells['cpu1_cell_trace'], json.cpu1[i], cpu1_colors, true, false);*/
-
+    //Calculate average activity on CPU4 noduli
     cpu4_sum = [0, 0];
     for (var j = 0; j< 8; j++){
         cpu4_sum[0] += json.cpu4[i][j]
@@ -259,7 +354,20 @@ function render(json, cells, i){
         cpu4_sum[1] += json.cpu4[i][j]
     }
     cpu4_sum[1] /= 8;
-    updateColors(cells['cpu4_sum'], cpu4_sum, trace_colors, true, false);
+
+    if (colorType == 'coloured'){
+        updateColors(cells['cl1_cell_trace'], json.cl1[i], cl1_colors, true, false);
+        updateColors(cells['tb1_cell_trace'], json.tb1[i], tb1_colors, true, false);
+        updateColors(cells['cpu4_cell_trace'], json.cpu4[i], cpu4_colors, true, false);
+        updateColors(cells['cpu1_cell_trace'], json.cpu1[i], cpu1_colors, true, false);
+        updateColors(cells['cpu4_sum'], cpu4_sum, cpu4_colors, true, false);
+    } else {
+        updateColors(cells['cl1_cell_trace'], json.cl1[i], trace_colors, true, false);
+        updateColors(cells['tb1_cell_trace'], json.tb1[i], trace_colors, true, false);
+        updateColors(cells['cpu4_cell_trace'], json.cpu4[i], trace_colors, true, false);
+        updateColors(cells['cpu1_cell_trace'], json.cpu1[i], trace_colors, true, false);
+        updateColors(cells['cpu4_sum'], cpu4_sum, trace_colors, true, false);
+    }
 
     if (save == true) {
         capturer.capture(c);
@@ -293,9 +401,7 @@ function animate(json, cells, i, max_path_length){
         initialize_canvas(ctx);
     }
     // Half way change colour to do homing
-    if (i == Math.round(max_path_length / 2)) {
-        ctx.fillStyle=inbound_color;
-    }
+    
 
     requestAnimFrame(function() {
        animate(json, cells, i, max_path_length);
@@ -318,6 +424,12 @@ for (var i = 0; i < svgs.length; i++){
         svgs[i].addEventListener("load", dfd.resolve);
     }).promise());
 }
+
+promises.push($.Deferred(function (dfd) {
+    beeImage.onload = dfd.resolve;
+    beeImage.src = 'megalopta.png';
+}).promise());
+
 
 $.when.apply($, promises).then(function(){
     // get the inner DOM of svg
@@ -397,7 +509,7 @@ $.when.apply($, promises).then(function(){
 
 
     // Load the data
-    $.getJSON("path1.json", function(json) {
+    $.getJSON("path.json", function(json) {
         var max_path_length = json.x.length;
         initialize_canvas(ctx);
         if (save == true) {
@@ -408,6 +520,7 @@ $.when.apply($, promises).then(function(){
         animate(json, cells, i, max_path_length);
     });
 }, false);
+
 
 
 </script>
